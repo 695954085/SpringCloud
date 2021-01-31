@@ -20,6 +20,8 @@
         <module>cloud-consumerconsul-order80</module>
         <module>untitled</module>
         <module>cloud-consumer-feign-order80</module>
+        <module>cloud-provider-hystrix-payment8001</module>
+        <module>cloud-consumer-hystrix-order80</module>
     </modules>
     <packaging>pom</packaging>
 
