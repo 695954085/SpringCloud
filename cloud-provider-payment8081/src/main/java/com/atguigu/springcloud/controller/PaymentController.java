@@ -61,4 +61,9 @@ public class PaymentController {
         }
         return discoveryClient;
     }
+
+    @GetMapping("/payment/sleuth")
+    public String paymentSleuth() {
+        return "hi, i'am payment sleuth server fallback";
+    }
 }
