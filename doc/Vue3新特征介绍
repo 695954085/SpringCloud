@@ -1,0 +1,208 @@
+# Vue3新特征介绍
+
+### 内容目录
+
+[TOC]
+### 为什么使用Composition API
+
+Vue2具有以下3个使用限制：
+- 当组件变得越来越大时难以阅读
+- 复用模式具有缺点
+- Vue2不具有开箱即用TypeScript
+
+下面将详细介绍使用新API如何解决前两种问题。
+
+#### 大型组件难以阅读以及维护
+
+为了解决这个问题，编写一个网页搜索组件
+
+![搜索组件](https://github.com/695954085/SpringCloud/blob/master/doc/1570466230395_01-search-1.gif?raw=true)
+使用标准Vue组件语法实现组件：
+![标准Vue组件](https://github.com/695954085/SpringCloud/blob/master/doc/1570466236547_02-old%20syntax.jpg?raw=true)
+当需要为组件新增排序功能时，代码扩展以下那样：
+![标准Vue组件](https://github.com/695954085/SpringCloud/blob/master/doc/1570466246070_03-withsorting-1.jpg?raw=true)
+现在看上去代码还算整洁，但是当我们新增搜索过滤以及翻页功能时就会越来越糟糕。新特性有很多代码片段拆分组件的选项
+
+(components,props,data,computed,methods以及lifecycle方法)。如果使用颜色代表组件的功能，会显得组件代码十分混乱。
+![每个颜色代表一个功能](https://github.com/695954085/SpringCloud/blob/master/doc/1570466251996_04-logical-concerns.jpg?raw=true)
+你可以想象，如果我们把功能代码聚集一起，代表将容易阅读和维护。以下是搜索组件使用新特性的代码：
+![setup新语法](https://github.com/695954085/SpringCloud/blob/master/doc/1570466257130_05-composition-setup.jpg?raw=true)
+你一定有疑惑，是否是创建一个巨大的setup方法把所有代码放进去。
+不必担心，这不会发生。使用composition API组织组件的功能，setup方法会调用每组composition方法。代码如下：
+![composition functions](https://github.com/695954085/SpringCloud/blob/master/doc/1570466262485_06-composition-functions.jpg?raw=true)
+上述组件是由功能划分边界。然而这并不意味着用户界面使用更少的组件构成。我们仍然需要很好的组件设计来构成我们的应用。
+![组件设计模式](https://github.com/695954085/SpringCloud/blob/master/doc/1570466269664_07-comp-ui-not.jpg?raw=true)
+总的来说Composition API让大型组件可读性更高，更容易维护。
+
+#### 组件间没有完美的复用逻辑
+
+Vue2有3种组件间复用代码的方法，但都有限制。让我们逐一介绍它们。首先是Mixins。
+![Mixins](https://github.com/695954085/SpringCloud/blob/master/doc/1570466274710_08-mixins.jpg?raw=true)
+好处
+- Mixins能很好的扩分功能
+缺点
+- 容易出现冲突，例如命名冲突
+- 难以厘清mixins之间的交互关系
+- minin难以被其它组件复用
+
+接下来看看Mixin工厂模式，它返回自定义的Mixin版本。
+
+![Mixin Factory](https://github.com/695954085/SpringCloud/blob/master/doc/1570466281614_09-Mixin%20Factory.jpg?raw=true)
+
+上述代码片段中看出，可以通过修改参数得到自定义的Mixin。我们可以通过配置适配其它组件。
+
+好处
+- 配置化使得Mixin容易复用
+- Mixins之间关系清晰一些
+
+缺点
+- 命名需要强制约定
+- Mixin仍然有一些隐含的额外属性，意味着需要深入Mixin内部理解这些属性的意思
+- Mixin factories不能动态生成
+
+最后就是最有用的Scoped Slots
+
+![Scoped Slots](https://github.com/695954085/SpringCloud/blob/master/doc/1570466291762_10-scoped-slots.jpg?raw=true)
+
+好处
+- 解决所有Mixins的缺点
+
+缺点
+- template会增加缩进，降低阅读性
+- 导出的属性只能在template中使用
+- 增加组件数量，降低了性能
+
+总的来说，每种解决办法都有局限性。Vue3的Composition API提供了第四种提取可重用代码，代码如下：
+
+![](https://github.com/695954085/SpringCloud/blob/master/doc/1570466297345_11-composition-api-1.jpg?raw=true)
+
+在setup方法中使用到了导入函数创建的组件。
+
+好处
+- 更少的代码
+- 学习门槛低
+- 比Mixins和Scoped Slots灵活
+
+缺点
+- 需要学习新的底层API去定义Composition API
+- 多了一种方式去编写组件代码
+
+### setup方法介绍
+
+#### 使用setup function
+
+在Vue3中使用Composition API，先是创建一个setup方法
+```
+<template>
+  <div>Capacity: {{ capacity }}</div>
+</template>
+<script>
+export default {
+  setup() {
+    // more code to write
+  }
+};
+</script>
+```
+setup方法执行在以下选项之前：
+- Components
+- Props
+- Data
+- Methods
+- Computed Properties
+- Lifecycle methods
+
+这就意味着setup方法并不能像其它`Component options`一样访问`this`。为了能代替`this`，setup方法有两个可选参数`props`和`context`。
+
+props是响应式的，并且可以被监听：
+```
+import { watch } from "vue";
+export default {
+  props: {
+    name: String
+  },
+  setup(props) {
+    watch(() => {
+      console.log(props.name);
+    });
+  }
+};
+```
+
+context则是包含一系列有用数据
+```
+setup(props, context) {
+  context.attrs;
+  context.slots;
+  context.parent;
+  context.root;
+  context.emit;
+}
+```
+
+### Reactive References介绍
+
+```
+<template>
+ <div>Capacity: {{ capacity }}</div>
+</template>
+<script>
+import { ref } from "vue";
+export default {
+  setup() {
+    const capacity = ref(3);
+    // additional code to write
+  }
+};
+</script>
+```
+
+`const capacity = ref(3)`创建了响应式引用。它包裹了一个基础变量到一个对象中，允许我们跟踪它的变化。就像之前`data()`选项也包裹基础变量到对象中。
+> composition API允许创建一个不与组件关联的响应式变量。
+
+最后，需要显式返回一个对象包裹这个属性，template会正确渲染。
+```
+<template>
+  <div>Capacity: {{ capacity }}</div>
+</template>
+<script>
+import { ref } from "vue";
+export default {
+  setup() {
+    const capacity = ref(3);
+    return { capacity };
+  }
+};
+</script>
+```
+返回的对象，能够在`renderContext`中访问到。上述代码看上去有点冗长，但是却很有必要。因为这有助于长期维护，因为我们能控制导出到template是什么，追
+
+踪它们在哪里被定义。
+
+#### 迁移办法
+可以使用这个[插件](https://github.com/vuejs/composition-api)，一旦在你的Vue2工程中安装这个插件，你也可以使用相同的语法，只是导包有些不一样。
+
+```
+import { ref } from "vue";
+```
+替换成
+```
+import { ref } from "@vue/composition-api";
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
