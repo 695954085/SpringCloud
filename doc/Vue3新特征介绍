@@ -21,9 +21,7 @@ Vue2具有以下3个使用限制：
 ![标准Vue组件](https://github.com/695954085/SpringCloud/blob/master/doc/1570466236547_02-old%20syntax.jpg?raw=true)
 当需要为组件新增排序功能时，代码扩展以下那样：
 ![标准Vue组件](https://github.com/695954085/SpringCloud/blob/master/doc/1570466246070_03-withsorting-1.jpg?raw=true)
-现在看上去代码还算整洁，但是当我们新增搜索过滤以及翻页功能时就会越来越糟糕。新特性有很多代码片段拆分组件的选项
-
-(components,props,data,computed,methods以及lifecycle方法)。如果使用颜色代表组件的功能，会显得组件代码十分混乱。
+现在看上去代码还算整洁，但是当我们新增搜索过滤以及翻页功能时就会越来越糟糕。新特性有很多代码片段拆分组件的选项(components,props,data,computed,methods以及lifecycle方法)。如果使用颜色代表组件的功能，会显得组件代码十分混乱。
 ![每个颜色代表一个功能](https://github.com/695954085/SpringCloud/blob/master/doc/1570466251996_04-logical-concerns.jpg?raw=true)
 你可以想象，如果我们把功能代码聚集一起，代表将容易阅读和维护。以下是搜索组件使用新特性的代码：
 ![setup新语法](https://github.com/695954085/SpringCloud/blob/master/doc/1570466257130_05-composition-setup.jpg?raw=true)
@@ -112,7 +110,7 @@ setup方法执行在以下选项之前：
 - Computed Properties
 - Lifecycle methods
 
-这就意味着setup方法并不能像其它`Component options`一样访问`this`。为了能代替`this`，setup方法有两个可选参数`props`和`context`。
+这就意味着setup方法并不能像其它`Component options`一样访问`this`。为了能代替`this`，setup方法有两个可选参数`props`和`context`。setup方法返回的内容也作为组件一部分或者template，其余部分为(computed properties, methods, lifecycle钩子)。
 
 props是响应式的，并且可以被监听：
 ```
@@ -157,7 +155,7 @@ export default {
 </script>
 ```
 
-`const capacity = ref(3)`创建了响应式引用。它包裹了一个基础变量到一个对象中，允许我们跟踪它的变化。就像之前`data()`选项也包裹基础变量到对象中。
+`const capacity = ref(3)`创建了响应式引用。它包裹了一个基础变量到一个对象中，允许我们跟踪它的变化。就像之前`data()`选项也包裹基础变量到对象中。包裹值到对象中看上去有点多余，其实就是为了JavaScript中不同数据类型保持统一。因为JavaScript中，基础变量`Number`或者`String`是传递值，不是传递引用。
 > composition API允许创建一个不与组件关联的响应式变量。
 
 最后，需要显式返回一个对象包裹这个属性，template会正确渲染。
@@ -175,9 +173,7 @@ export default {
 };
 </script>
 ```
-返回的对象，能够在`renderContext`中访问到。上述代码看上去有点冗长，但是却很有必要。因为这有助于长期维护，因为我们能控制导出到template是什么，追
-
-踪它们在哪里被定义。
+返回的对象，能够在`renderContext`中访问到。上述代码看上去有点冗长，但是却很有必要。因为这有助于长期维护，因为我们能控制导出到template是什么，追踪它们在哪里被定义。
 
 #### 迁移办法
 可以使用这个[插件](https://github.com/vuejs/composition-api)，一旦在你的Vue2工程中安装这个插件，你也可以使用相同的语法，只是导包有些不一样。
@@ -189,7 +185,51 @@ import { ref } from "vue";
 ```
 import { ref } from "@vue/composition-api";
 ```
+### Lifecycle钩子
+Vue中有几个新的函数，与之前的API相似，但是增加前缀`on`，例如`mounted`变成`onMounted`
+这些函数接受一个回调函数，这些回调函数会在钩子函数执行时被调用。
 
+```
+// src/components/UserRepositories.vue `setup` function
+import { fetchUserRepositories } from '@/api/repositories'
+import { ref, onMounted } from 'vue'
+
+// in our component
+setup (props) {
+  const repositories = ref([])
+  const getUserRepositories = async () => {
+    repositories.value = await fetchUserRepositories(props.user)
+  }
+
+  onMounted(getUserRepositories) // on `mounted` call `getUserRepositories`
+
+  return {
+    repositories,
+    getUserRepositories
+  }
+}
+```
+
+### 监控变化watch
+
+与之前`watch`相似，我们使用Vue3的`watch`函数替代。它接受3个参数：
+- 响应式的引用或者getter函数
+- 回调函数
+- 可选配置参数
+```
+import { ref, watch } from 'vue'
+
+const counter = ref(0)
+watch(counter, (newValue, oldValue) => {
+  console.log('The new counter value is: ' + counter.value)
+})
+```
+
+
+
+**更多请参考**：
+[the Composition API on Vue Mastery](https://www.vuemastery.com/courses/vue-3-essentials/why-the-composition-api/)
+[composition-api-introduction](https://v3.vuejs.org/guide/composition-api-introduction.html#reacting-to-changes-with-watch)
 
 
 
