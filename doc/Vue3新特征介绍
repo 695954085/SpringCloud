@@ -1,4 +1,4 @@
-# Vue3新特征介绍
+﻿# Vue3新特征介绍
 
 ### 内容目录
 
@@ -224,8 +224,23 @@ watch(counter, (newValue, oldValue) => {
   console.log('The new counter value is: ' + counter.value)
 })
 ```
+每当`counter`被修改，例如`counter.value = 5`，watch会被触发并且执行callback，在控制台打印`The new counter value is: 5`。
 
+### computed属性
 
+类似于`ref`或者`watch`，计算属性也可以在Vue组件之外创建，使用导入Vue中的`computed`方法。
+
+```
+import { ref, computed } from 'vue'
+
+const counter = ref(0)
+const twiceTheCounter = computed(() => counter.value * 2)
+
+counter.value++
+console.log(counter.value) // 1
+console.log(twiceTheCounter.value) // 2
+```
+`computed`方法返回一个只读的响应式引入。为了访问新创建的计算变量，我们需要使用`.value`属性，类似于`ref`。
 
 **更多请参考**：
 [the Composition API on Vue Mastery](https://www.vuemastery.com/courses/vue-3-essentials/why-the-composition-api/)
